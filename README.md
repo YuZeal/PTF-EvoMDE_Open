@@ -1,4 +1,4 @@
-# PTF-EvoMDE 
+# Efficient Evolutionary Architecture Search for Monocular Depth Estimation via Hierarchical Parameter Mapping
 
 
 <div align="center">
@@ -28,7 +28,7 @@ cd DCNv2_latest && python3 setup.py build develop
 
 ## Datasets
 
-You can prepare the datasets [NYUv2](https://cs.nyu.edu/~fergus/datasets/nyu_depth_v2.html) and [KITTI](https://www.cvlibs.net/datasets/kitti/eval_depth.php?benchmark=depth_prediction) following the instructions provided in their official websites, and download the [synthetic data](http://cmic.cs.ucl.ac.uk/ColonoscopyDepth/) for Colonoscopy depth estimation. After downloading, please modify the data_path fields in the config files to match your local dataset locations.
+You can prepare the datasets [NYUv2](https://cs.nyu.edu/~fergus/datasets/nyu_depth_v2.html) and [KITTI](https://www.cvlibs.net/datasets/kitti/eval_depth.php?benchmark=depth_prediction) following the instructions provided in their official websites, and download the [synthetic data](http://cmic.cs.ucl.ac.uk/ColonoscopyDepth/) for Colonoscopy depth estimation. After downloading, please modify the `data_path` fields to match your local dataset locations.
 
 
 ## Searching & Training
@@ -36,7 +36,7 @@ Coming soon.
 
 
 ## Evaluation
-Evaluate the searched models with the following scripts:
+Please first download the pre-trained weight files and place them under the `./weights/` directory. Evaluate the searched models with the following scripts:
 
 - **NYUv2**
 
@@ -58,14 +58,14 @@ sh scripts/test/colon_test.sh
 
 
 ## Models
-| Model | Params.| Abs Rel | Sq Rel | RMSE | RMSE log | a1 | a2 | a3| 
+| Model | Params.| Abs Rel | Sq Rel | RMSE | RMSE log | a1 | a2 | a3 | 
 | :--- | :---: | :---: | :---: |  :---: |  :---: |  :---: |  :---: |  :---: |
-|[NYUv2](https://virutalbuy-public.oss-cn-hangzhou.aliyuncs.com/share/newcrfs/models/model_nyu.ckpt) | 6.13 | 0.1108 | 0.0675 | 0.4003 | 0.1448 | 0.8769 | 0.9775 | 0.9947  |
-|[KITTI_Eigen](https://virutalbuy-public.oss-cn-hangzhou.aliyuncs.com/share/newcrfs/models/model_kittieigen.ckpt) | 6.26 | 0.0621 | 0.2173 | 2.5566 | 0.0954 | 0.9578 | 0.9943 | 0.9988 |
+|[NYUv2](https://github.com/sakura-yzh/PTF-EvoMDE_Open/releases/download/weight_files/nyu_best.pth) | 6.13M | 0.1108 | 0.0675 | 0.4003 | 0.1448 | 0.8769 | 0.9775 | 0.9947  |
+|[KITTI(Eigen)](https://github.com/sakura-yzh/PTF-EvoMDE_Open/releases/download/weight_files/kitti_best.pth) | 6.26M | 0.0621 | 0.2173 | 2.5566 | 0.0954 | 0.9578 | 0.9943 | 0.9988 |
 
-| Model | Params.| Mean L1-error  | Mean Relative L1-error  | Mean RMSE | a05 |
+| Model | Mean L1-error  | Mean Relative L1-error  | Mean RMSE | a05 |
 | :--- | :---: | :---: | :---: |  :---: |  :---: | 
-|[Colon](https://virutalbuy-public.oss-cn-hangzhou.aliyuncs.com/share/newcrfs/models/model_nyu.ckpt) | 6.26 | 0.1397 | 0.0543 | 0.2306 | 0.8919 |
+|[Colon](https://github.com/sakura-yzh/PTF-EvoMDE_Open/releases/download/weight_files/colon_best.pth) | 0.1397 | 0.0543 | 0.2306 | 0.8919 |
 
 
 ## NYUv2 Quantitative Comparison
@@ -74,3 +74,6 @@ sh scripts/test/colon_test.sh
   <img src="assets/nyu_compare.png" width="95%" />
 </div>
 
+## Code Release
+
+We plan to release the complete source code upon the acceptance of our paper.
