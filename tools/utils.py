@@ -11,7 +11,7 @@ import torch.distributed as dist
 
 import mmcv
 from mmcv.runner.utils import get_dist_info
-
+from tools.multadds_count import comp_multadds_fw
 
 
 def set_data_path(data_root, data_cfg):
@@ -147,6 +147,32 @@ def get_output_chs(net_config):
     return stage_chs[-4:]
 
 
+def get_network_madds(backbone, neck, head, input_size, logger, search=False):
+    input_data = torch.randn((2,3,)+input_size).cuda()
+    backbone_madds, backbone_data = comp_multadds_fw(backbone, input_data)
+    backbone_params = count_parameters_in_MB(backbone)
+    if neck is not None:
+        neck_madds, neck_data = comp_multadds_fw(neck, backbone_data)
+        neck_params = count_parameters_in_MB(neck)
+    else:
+        neck_madds = 0.
+        neck_params = 0.
+        neck_data = backbone_data
+    if hasattr(head, 'search') and search:
+        head.search = False
+    head_madds, _ = comp_multadds_fw(head, neck_data)
+    head_params = count_parameters_in_MB(head)
+    if hasattr(head, 'search') and search:
+        head.search = True
+    total_madds = backbone_madds + neck_madds + head_madds
+    total_params = backbone_params + neck_params + head_params
+
+    logger.info("Derived Mult-Adds: [Backbone] %.2fGB [Neck] %.2fGB [Head] %.2fGB [Total] %.2fGB", 
+                    backbone_madds/1e3, neck_madds/1e3, head_madds/1e3, total_madds/1e3)
+    logger.info("Derived Num Params: [Backbone] %.2fMB [Neck] %.2fMB [Head] %.2fMB [Total] %.2fMB", 
+                    backbone_params, neck_params, head_params, total_params)
+
+
 def convert_sync_batchnorm(module, process_group=None):
     module_output = module
     if isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
@@ -164,7 +190,7 @@ def convert_sync_batchnorm(module, process_group=None):
         module_output.running_mean = module.running_mean
         module_output.running_var = module.running_var
         module_output.num_batches_tracked = module.num_batches_tracked
-        module_output._specify_ddp_gpu_num(1) 
+        module_output._specify_ddp_gpu_num(1)  # torch1.9中被废弃
     for name, child in module.named_children():
         module_output.add_module(name, convert_sync_batchnorm(child, process_group))
     del module
@@ -240,12 +266,15 @@ def setup_work_dir(args, cfg):
         else:
             args.job_name = 'output_' + time.strftime("%Y%m%d-%H%M%S_") + args.job_name
         
+        # 确保所有进程使用相同的工作目录
         if dist.is_initialized():
+            # 从主进程（rank 0）获取工作目录并广播给所有其他进程
             if dist.get_rank() == 0:
                 cfg.work_dir = osp.join(args.work_dir, args.job_name)
             else:
                 cfg.work_dir = None
             
+            # 广播工作目录给所有进程
             work_dir_list = [cfg.work_dir]
             dist.broadcast_object_list(work_dir_list, src=0)
             cfg.work_dir = work_dir_list[0]

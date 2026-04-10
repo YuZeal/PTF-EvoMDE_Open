@@ -4,7 +4,8 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
 # from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-from patch import DropPath, to_2tuple, trunc_normal_, GELU
+from patch import DropPath, to_2tuple, trunc_normal_
+from patch import GELU
 
 class Mlp(nn.Module):
     """ Multilayer perceptron."""

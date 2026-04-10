@@ -23,10 +23,10 @@ def load_rgb(path, dataset_type):
 def load_depth(path, dataset_type):
     if dataset_type == 'smalldata':
         depth = imread(path).astype(np.float32)
-        return depth[:, :, 0] 
+        return depth[:, :, 0]  # smalldata深度只取第一通道
     elif dataset_type == 'colon':
-        depth = mping.imread(path).astype(np.float32) 
-        return depth * 20.0  
+        depth = mping.imread(path).astype(np.float32)  # 自动归一化
+        return depth * 20.0  # 放缩到0~20
     elif dataset_type == 'blender':
         depth = np.load(path)
         return depth
@@ -38,6 +38,7 @@ class MyDataloader(data.Dataset):
         self.dataset = dataset
         self.transform = self.train_transform if self.type == 'train' else self.val_transform
 
+        # 读取所有图片地址
         if dataset == 'colon':
             self._init_colon()
         elif dataset == 'smalldata':
@@ -49,15 +50,12 @@ class MyDataloader(data.Dataset):
         
     def _init_colon(self):
         if self.type == 'train':
-            scene_list_path = self.root / 'train.txt'
-            self.scenes = [self.root / folder[:-1] for folder in open(scene_list_path)] 
+            scene_list_path = self.root / 'train_T1_L1.txt'
+            self.scenes = [self.root / folder[:-1] for folder in open(scene_list_path)]  # [:-1]吃回车，txt文件每行以回车结尾（注意最后一行也是!）
         elif self.type == 'val':
-            scene_list_path = self.root / 'val.txt'
+            scene_list_path = self.root / 'val_T1_L1.txt'
             self.scenes = [self.root / folder[:-1] for folder in open(scene_list_path)]
-        elif self.type == 'test':
-            scene_list_path = self.root / 'test.txt'
-            self.scenes = [self.root / folder[:-1] for folder in open(scene_list_path)]
-        self.crawl_folders() 
+        self.crawl_folders()  # 获取目标文件夹中每张图片地址
 
     def _init_smalldata(self):
         if self.type == 'train':
@@ -78,15 +76,15 @@ class MyDataloader(data.Dataset):
         self.imgs = [{'RGB': str(self.root / row['image']), 'GT': str(self.root / row['depth'])} for _, row in self.data.iterrows()]  # 地址集合
         # print(self.imgs[0])
   
-    def crawl_folders(self): 
+    def crawl_folders(self):  # for colon,smalldata
         sequence_set = []
-        for scene_path in self.scenes:
+        for scene_path in self.scenes: # 遍历self.scenes中的每个场景
             if not isinstance(scene_path, Path):  
                 scene_path = Path(scene_path)  
             
             if self.dataset == 'colon':
-                img_files = sorted(scene_path.files('FrameBuffer_*.png')) 
-                depth_files = sorted(scene_path.files('Depth_*.png'))
+                img_files = sorted(scene_path.files('FrameBuffer_*.png'))  # rgb图片地址清单
+                depth_files = sorted(scene_path.files('Depth_*.png'))  # depth图片地址清单
             elif self.dataset == 'smalldata':
                 img_files = sorted(scene_path.files('*.png'))
                 depth_path = scene_path / 'GT'

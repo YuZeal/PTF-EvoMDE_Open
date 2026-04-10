@@ -10,7 +10,7 @@ import mmcv
 from mmcv.parallel import MMDataParallel
 from mmdet.models import build_detector
 from mmcv.runner import load_checkpoint
-from models.mdenet_train import EvoMDENet
+from models.fna_retinanet_detector_train import NASRetinaNetTrain
 import os
 
 import numpy as np
@@ -21,7 +21,7 @@ from dataloader import NewDataLoader
 from med_dataloader.MedDataloader import GetMedDataloader
 
 
-os.environ["CUDA_VISIBLE_DEVICES"]="7"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 ### The script file in 'scripts/test/'
 
@@ -149,7 +149,8 @@ def main():
     torch.cuda.empty_cache()
     args = parse_args()
     args.distributed = False
-
+    if args.config_seg:
+        cfg_seg = load_cfg_from_cfg_file(args.config_seg)
     ngpus_per_node = torch.cuda.device_count()
     if ngpus_per_node > 1:
         print("This machine has more than 1 gpu. Please set \'CUDA_VISIBLE_DEVICES=0\'")
@@ -166,6 +167,13 @@ def main():
     if args.dataset not in ['cityscapes']:
         cfg.model['bbox_head']['max_depth'] = args.max_depth
         cfg.model['bbox_head']['with_fapn'] = args.with_fapn
+    if args.use_offi_ecd in backbone_options:
+        module_name, model_name = backbone_options[args.use_offi_ecd]
+        # 动态导入模块
+        module = __import__('models.official_encoder', fromlist=[module_name])
+        model_class = getattr(module, module_name)
+        # 直接实例化并访问 dimList 属性
+        cfg.model['bbox_head']['in_channels'] = getattr(model_class(pretrained=False), 'dimList', None)
 
     print('configs: \n'+str(cfg))
     print('args: \n'+str(args))

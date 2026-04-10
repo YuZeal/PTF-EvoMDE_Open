@@ -98,18 +98,6 @@ def compute_errors(gt, pred):
 
     return [silog, abs_rel, log10, rms, sq_rel, log_rms, d1, d2, d3]
 
-def compute_errors_colon(gt, pred):
-    thresh = np.maximum((gt / pred), (pred / gt))
-    d05 = (thresh < 1.25**0.5).mean()
-    l1_error = np.abs(gt - pred).mean()  # l1_error
-    epsilon = 1e-8
-    relative_l1_error = np.abs(gt - pred) / (gt + epsilon)
-    mean_relative_l1_error = relative_l1_error.mean()  # mean_relative_l1_error
-    rms = (gt - pred) ** 2
-    rms = np.sqrt(rms.mean())
-
-    return [l1_error, mean_relative_l1_error, rms, d05]
-
 
 class silog_loss(nn.Module):
     def __init__(self, variance_focus):  # variance_focus=0.85
@@ -151,6 +139,24 @@ def ssim_loss(img1, img2):
                ((mu1 ** 2 + mu2 ** 2 + C1) * (sigma1 + sigma2 + C2))
 
     return torch.clamp((1 - ssim_map) / 2, 0, 1).mean()
+
+class CombinedDepthLoss(nn.Module):
+    def __init__(self, variance_focus=0.85, λ=0.1, μ=0.1):
+        super().__init__()
+        self.variance_focus = variance_focus
+        self.λ = λ
+        self.μ = μ
+
+    def silog_loss(self, depth_est, depth_gt, mask):
+        d = torch.log(depth_est[mask]) - torch.log(depth_gt[mask])
+        return torch.sqrt((d ** 2).mean() - self.variance_focus * (d.mean() ** 2)) * 10.0
+
+    def forward(self, depth_est, depth_gt, mask, image):
+        silog = self.silog_loss(depth_est, depth_gt, mask)
+        smooth = edge_aware_smoothness_loss(depth_est, image)
+        ssim = ssim_loss(depth_est, depth_gt)
+        # print('silog:', silog.item(), 'smooth:', self.λ * smooth.item(), 'ssim:', self.μ * ssim.item())
+        return silog + self.λ * smooth + self.μ * ssim
 
 
 def flip_lr(image):

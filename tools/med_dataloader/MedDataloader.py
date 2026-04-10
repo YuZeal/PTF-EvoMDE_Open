@@ -60,14 +60,3 @@ class GetMedDataloader():
             self.arch_data = torch.utils.data.DataLoader(arch_subset, 
                                                           batch_size=args.batch_size, 
                                                           shuffle=(arch_sampler is None), num_workers=args.num_threads, pin_memory=True, sampler=arch_sampler, drop_last=True)
-            
-        elif mode == 'test':
-            test_data = None
-            test_data = create_data_loaders(args, 'test')
-            if args.distributed:
-                test_sampler = torch.utils.data.distributed.DistributedSampler(test_data)
-            else:
-                test_sampler = None
-            self.data = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size,
-                                                    shuffle=False, num_workers=args.num_threads, pin_memory=True,
-                                                    sampler=test_sampler)

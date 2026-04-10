@@ -7,7 +7,7 @@ import torch
 # os.environ["CUDA_VISIBLE_DEVICES"]="1"  # TODO
 from .dataloader_total import MedicalDataloader
 
-def create_data_loaders(args, test=False):
+def create_data_loaders(args):
     # Data loading code
     # print("=> creating data loaders ...")
 
@@ -20,9 +20,6 @@ def create_data_loaders(args, test=False):
     elif args.dataset == 'colon':
         root_path = r"/data/dataset/Medical/Colonscopy"
 
-    if test:
-        test_dataset = MedicalDataloader(root_path, type='test', dataset=args.dataset)
-        return test_dataset
 
     train_dataset = MedicalDataloader(root_path, type='train', dataset=args.dataset)
     val_dataset = MedicalDataloader(root_path, type='val', dataset=args.dataset)
